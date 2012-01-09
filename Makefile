@@ -1,3 +1,6 @@
 
 all:
-	gcc -o integer integer.c
+	gcc -g -o integer integer.c
+
+clean:
+	rm integer

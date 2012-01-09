@@ -1,8 +1,28 @@
 #include <stdio.h>
 #include <string.h>
-#include "hash.h"
 #include <stdlib.h>
-//#include "comm.h"
+#include "hash.h"
+#include "stack.h"
+
+void push(double i)
+{
+  p1++;
+  if(p1 == (tos+SIZE)) {
+    printf("Stack Overflow.\n");
+    exit(1);
+  }
+  *p1 = i;
+}
+
+double pop(void)
+{
+  if(p1 == tos) {
+    printf("Stack Underflow.\n");
+    exit(1);
+  }
+  p1--;
+  return *(p1+1);
+}
 
 unsigned int  lh_strhash(void *src)
 {
@@ -10,11 +30,15 @@ unsigned int  lh_strhash(void *src)
  unsigned long ret=0;
  unsigned short *s;
  char *str = (char *)src ;
+
  if (str == NULL) return(0);
- l=(strlen(str)+1)/2;
- s=(unsigned short *)str;
+
+ l = (strlen(str)+1)/2;
+ s = (unsigned short *) str;
+
  for (i=0; i<l; i++)
   ret^=(s[i]<<(i&0x0f));
+
  return(ret);
 }
 int equal_str(void *k1, void *k2)
@@ -151,7 +175,8 @@ void hash_remove(void *key, struct hashtable *tab)
 void *hash_value(void *key, struct hashtable *tab)
 {
  struct hashentry *pos ;
- unsigned int index = hashindex(key,tab) ;
+ unsigned int index = hashindex(key, tab) ;
+
  for (pos = tab->hashlist[ index ];  NULL != pos; pos = pos->next) {
   if  (tab->compare(key, pos->key)) {
    return (pos->data) ;
@@ -171,94 +196,202 @@ void hash_for_each_do (struct hashtable *tab, int (cb)(void *, void *))
  }
 }
 
+int input_var(void *key, void *data)
+{
+	printf("The value of %s is %s\n", key, data);
+}
+
 inline int  hash_count(struct hashtable *tab)
 {
  return tab->count ;
 }
 
+char checksign(char *str)
+{
+	if (!strcmp(str, "+"))
+	{
+		return '+';
+	}
+	else if (!strcmp(str, "-"))
+	{
+		return '-';
+	}
+	else if (!strcmp(str, "*"))
+	{
+		return '*';
+	}
+	else if (!strcmp(str, "/"))
+	{
+		return '/';
+	}
+
+	return '0';
+
+}
+
 int main(void)
 {
     char cmdline[255];
-    char op[255][255];
+    char op[255], cvalue[255];
     char *pch;
+	char symbol_table[255][255];
+	int csymbol=0;
+	int n_v = 0;
+	int count=0;
+	int code=1;
+
+	tos = stack;
+  	p1 = stack;
 
     struct hashtable *tab = create_hashtable(255);
 
     while (1)
-     {
-	printf("> ");
-	gets(cmdline);
-	pch = strtok(cmdline, " ");
-	int count=0;
-	int code=1;
- 	while (pch != NULL)
-  	{
-	  if (count == 0)
-	  {
-		if (!strcmp("f",pch))
-			code = FINDVAR;
-		else if (!strcmp("=",pch))
-			code = SETVAR;
-		else if (!strcmp("d",pch))
-			code = DELVAR;
-		else if (!strcmp("p",pch))
-			code = PRINTVAR;
-		else if (!strcmp("q",pch))
-			code = EXIT;
-		else
-		{
-			printf("no command\n");
-			exit(1);
-		}
-	  }
-	 else if (count == 1)
-	 {
-		switch (code)
-		{
+    {
+		printf("> ");
+		gets(cmdline);
+		pch = strtok(cmdline, " ");
+		count=0;
+		code=1;
+ 		while (pch != NULL)
+  		{
+	  		if (count == 0)
+	  		{
+				if (!strcmp("f",pch))
+					code = FINDVAR;
+				else if (!strcmp("=",pch))
+					code = SETVAR;
+				else if (!strcmp("d",pch))
+					code = DELVAR;
+				else if (!strcmp("p",pch))
+					code = PRINTVAR;
+				else if (!strcmp("q",pch))
+					code = EXIT;
+			else
+			{
+				printf("no command\n");
+				break;
+			}
+
+	  		}
+	 		else if (count == 1)
+		 	{
+			switch (code)
+			{
 			case FINDVAR:
 			case SETVAR:
-				strcpy(op[count-1], pch);
+				strcpy(op, pch);
 				break;			
 			case DELVAR:
 				hash_remove(pch, tab);
+				break;
 			case PRINTVAR:
 			case EXIT:
 			default:
 				printf("no command\n");
-				exit(1);	
+				break;
 
-		}
-	 }
-	 else if (count == 2)
-	 {
+			}
+	 		}
+	 		else if (count == 2)
+	 		{
+			switch (code)
+			{
+			case SETVAR:
+
+				if (checksign(pch) != '0')
+				{
+					printf("no command");
+					break;
+				}
+
+	            if (hash_value(pch, tab) == NULL)
+					push(atof(pch));
+                else
+					push(atof(hash_value(pch, tab)));
+
+				break;
+
+			case FINDVAR:
+			case DELVAR:
+				printf("no command\n");
+				break;	
+			}
+	 	}
+	 	else
+		{
 		switch (code)
 		{
-			case FINDVAR:
-				printf("The value of %s is %s", op[count-2], hash_value(op[count-1], pch));
-				break;			
 			case SETVAR:
-				strcpy(op[count-1], pch);
-				break;			
-			case DELVAR:
+                if (checksign(pch) != '0')
+                {
+                   double v2 = pop();
+				   double v1 = pop();
+				   double v3 = 0;
+
+				   switch (checksign(pch))				   
+				   {
+						case '+':
+							v3 = (double) v1 + v2;
+							push(v3);
+							break;
+						case '-':
+							v3 = (double) v1 - v2;
+							push(v3);
+							break;
+						case '*':
+							v3 = (double) v1 * v2;
+							push(v3);
+							break;
+						case '/':
+							v3 = (double) v1 / v2;
+							push(v3);
+							break;
+
+				   }
+                }
+                else if (hash_value(pch, tab) == NULL)
+                    push(atof(pch));
+                else
+                    push(atof(hash_value(pch, tab)));
+                break;			
 			default:
 				printf("no command\n");
-				exit(1);	
+				break;
 		}
-	 }
-	 else
-	{
-		switch (code)
-		{
-			case SETVAR:
-				strcpy(op[count-1], pch);
-				break;			
 		}
-
-         }
  	 pch = strtok (NULL, " ");
 	 count++;
-  	}      
-     }
+  	}
+
+    switch (code)
+    {
+		case FINDVAR:
+			  if (count != 2) break;
+
+              if (hash_value(op, tab) == NULL)
+                {
+                    printf("%s not found!\n", op);
+                }
+                else
+                {
+                    printf("The value of %s is %s\n", op, hash_value(op, tab));
+                }
+                break;
+    	case SETVAR:
+				sprintf(cvalue, "%f", pop());
+				hash_insert((void *)strdup(op), (void *)strdup(cvalue), tab);
+				break;
+		case PRINTVAR:
+				if (count != 1) break;
+				hash_for_each_do(tab, input_var);
+				break;
+
+		case EXIT:
+			  	if (count != 1) break;
+				exit(1);	
+				break;
+	}
+  }
 
   return 0;
 }	

@@ -28,12 +28,11 @@ struct hashtable
  struct hashentry    **hashlist  ;  /* store data */
 };
 
+unsigned int  lh_strhash(void *src) ;
+int equal_str(void *k1, void *k2) ;
+
 #define create_hashtable(hsize) hash_create(lh_strhash, equal_str, hsize)
 #define  hashindex(key, tab)  ((tab->gethash) (key) % (tab->hashsize -1))
-
-unsigned int  lh_strhash(void *src) ;
-
-int equal_str(void *k1, void *k2) ;
 
 struct hashtable* hash_create(unsigned int  (*keyfunc)(void *),
    int  (*comparefunc)(void *,void *),
