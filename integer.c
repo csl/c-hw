@@ -247,7 +247,7 @@ int main(void)
 
     while (1)
     {
-		printf("> ");
+		printf(">");
 		gets(cmdline);
 		pch = strtok(cmdline, " ");
 		count=0;
@@ -256,7 +256,9 @@ int main(void)
   		{
 	  		if (count == 0)
 	  		{
-				if (!strcmp("f",pch))
+				if (!strcmp("INT",pch))
+					code = PROGRAM;
+				else if (!strcmp("f",pch))
 					code = FINDVAR;
 				else if (!strcmp("=",pch))
 					code = SETVAR;
@@ -284,6 +286,7 @@ int main(void)
 			case DELVAR:
 				hash_remove(pch, tab);
 				break;
+			case PROGRAM:
 			case PRINTVAR:
 			case EXIT:
 			default:
@@ -365,6 +368,10 @@ int main(void)
 
     switch (code)
     {
+		case PROGRAM:
+			  if (count != 1) break;
+			  printf("Welcome to INT!\n");
+			  break;
 		case FINDVAR:
 			  if (count != 2) break;
 

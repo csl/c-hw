@@ -6,6 +6,7 @@
 #define inline
 #endif
 
+#define PROGRAM 0
 #define FINDVAR 1
 #define SETVAR 2
 #define DELVAR 3
