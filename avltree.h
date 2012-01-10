@@ -32,7 +32,7 @@ short Height(struct tree_node*);
 
 struct tree_node *AVLMax(struct tree_node*);
 struct tree_node *AVLMin(struct tree_node*);
-struct tree_node *AVLFind(int);
+struct tree_node *AVLFind(DATE);
 struct tree_node *AVLLL(struct tree_node*);
 struct tree_node *AVLRR(struct tree_node*);
 struct tree_node *AVLLR(struct tree_node*);
@@ -40,8 +40,8 @@ struct tree_node *AVLRL(struct tree_node*);
 
 void AVLinit();
 void AVLFree(struct tree_node*);
-void AVLPrint(struct tree_node*);
+void AVLPrint(struct tree_node*, int);
 void AVLBalance(struct tree_node*, struct tree_node*);
-void InsAVL(int);
-void DelAVL(int);
+void InsAVL(DATE);
+void DelAVL(DATE);
 

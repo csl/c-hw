@@ -26,11 +26,27 @@ void AVLFree(struct tree_node *now) {
     free(now);
 }
 
-void AVLPrint(struct tree_node *now) {
+void AVLPrint(struct tree_node *now, int level) {
+	int i=0;
     if(now == AVL_TREE)    return;
-    if(now->leftChild != AVL_TREE)    AVLPrint(now->leftChild);
-    printf("%d -> ", now->v);
-    if(now->rightChild != AVL_TREE)    AVLPrint(now->rightChild);
+
+	for (i=0; i<level; i++)
+		printf("|");
+    
+	if (now->expdate[0] > 9)
+		printf("%d/", now->expdate[0]);
+	else
+		printf("0%d/", now->expdate[0]);
+
+	if (now->expdate[1] > 9)
+		printf("%d/", now->expdate[1]);
+	else
+		printf("0%d/", now->expdate[1]);
+
+	printf("%d\n", now->expdate[2]);
+
+    if(now->leftChild != AVL_TREE)    AVLPrint(now->leftChild, level+1);
+    if(now->rightChild != AVL_TREE)    AVLPrint(now->rightChild, level+1);
 }
 
 struct tree_node *AVLMax(tree_node *node) 
@@ -42,7 +58,7 @@ struct tree_node *AVLMax(tree_node *node)
 
 }
 
-struct tree_node *AVLMin( tree_node *node) 
+struct tree_node *AVLMin(tree_node *node) 
 {
     if(node == AVL_TREE || node->leftChild == AVL_TREE)    
 		return node;
@@ -144,25 +160,31 @@ void AVLBalance(struct tree_node *node, tree_node *dest) {
     }
 }
 
-void InsAVL(int key) 
+void InsAVL(DATE key) 
 {
     struct tree_node *curr = root, *prev = AVL_TREE;
-    while(curr != AVL_TREE) {
+    while(curr != AVL_TREE)
+	{
         prev = curr;
-        if(curr->v > key)    
+        if(DataCompare(curr->expdate, key) == 2)    
 			curr = curr->leftChild;
-        else if(curr->v < key)    
+        else if(DataCompare(curr->expdate, key) == 0)    
 			curr = curr->rightChild;
         else return;
     }
 
     curr = (struct tree_node*) malloc(sizeof(struct tree_node));
-    curr->v = key, curr->parent = prev, curr->h = 0;
+    
+	curr->expdate[0] = key[0];
+	curr->expdate[1] = key[1];
+	curr->expdate[2] = key[2];
+
+	curr->parent = prev, curr->h = 0;
     curr->leftChild = curr->rightChild = AVL_TREE;
   
     if(prev == AVL_TREE)    
 		root = curr;
-    else if(prev->v > key)    
+    else if(DataCompare(prev->expdate, key) == 2)    
 		prev->leftChild = curr;
     else    
 		prev->rightChild = curr;
@@ -170,7 +192,7 @@ void InsAVL(int key)
     AVLBalance(curr, AVL_TREE);
 }
 
-void DelAVL(int key) 
+void DelAVL(DATE key) 
 {
     struct tree_node *node = AVLFind(key);
     
@@ -218,19 +240,44 @@ void DelAVL(int key)
     free(node);
 }
 
-struct tree_node *AVLFind(int key) 
+struct tree_node *AVLFind(DATE key) 
 {
     struct tree_node *curr = root;
 
     while(curr != AVL_TREE) {
-        if(curr->v > key)    
+        if(DataCompare(curr->expdate, key) == 2)    
 			curr = curr->leftChild;
-        else if(curr->v < key)    
+        else if(DataCompare(curr->expdate, key) == 0)    
 			curr = curr->rightChild;
         else return curr;
     }
 
     return AVL_TREE;
+}
+
+int DataCompare(DATE left, DATE right)
+{
+	if (left[YEAR] > right[YEAR])
+		return 0;
+	else if (left[YEAR] < right[YEAR])
+		return 2;
+	else if (left[YEAR] == right[YEAR])
+	{
+    	if (left[MONTH] > right[MONTH])
+        	return 0;
+    	else if (left[MONTH] < right[MONTH])
+        	return 2;
+    	else if (left[MONTH] == right[MONTH])
+		{
+        	if (left[DAY] > right[DAY])
+            	return 0;
+        	else if (left[DAY] < right[DAY])
+            	return 2;
+
+		}
+	}
+
+	return 1;
 }
 
 int main(void)
@@ -243,6 +290,9 @@ int main(void)
     int n_v = 0;
     int count=0;
     int code=1;
+	DATE mdate;	
+
+	AVLinit();
 
     while (1)
     {
@@ -263,7 +313,7 @@ int main(void)
                     code = DELETE;
                 else if (!strcmp("T",pch))
                     code = SHOW;
-                else if (!strcmp("q",pch))
+                else if (!strcmp("Q",pch))
                     code = QUIT;
             	else
             	{
@@ -278,7 +328,10 @@ int main(void)
             	{
             		case INSERT:
             		case DELETE:
-                		strcpy(op, pch);
+						if (strlen(pch) != 8)
+							printf("data format error!!\n");
+						else
+                			strcpy(op, pch);
                 		break;
             		case SHOW:
             		case QUIT:
@@ -294,8 +347,8 @@ int main(void)
                 break;
 			}
         
-     	pch = strtok (NULL, " ");
-     	count++;
+     	  pch = strtok (NULL, " ");
+     	  count++;
     	}
 
     	switch (code)
@@ -306,15 +359,50 @@ int main(void)
                 break;
         	case INSERT:
                 if (count != 2) break;
+				//day
+				cvalue[0] = op[0];
+				cvalue[1] = op[1];
+				cvalue[2] = '\0';
+				mdate[DAY] = atoi(cvalue);
+				cvalue[0] = op[2];
+				cvalue[1] = op[3];
+				cvalue[2] = '\0';
+				mdate[MONTH] = atoi(cvalue);
+				cvalue[0] = op[4];
+				cvalue[1] = op[5];
+				cvalue[2] = op[6];
+				cvalue[3] = op[7];
+				cvalue[4] = '\0';
+				mdate[YEAR] = atoi(cvalue);
+				InsAVL(mdate);
+				printf("Date %s is inserted\n", op);
                 break;
         	case DELETE:
                 if (count != 2) break;
+                cvalue[0] = op[0];
+                cvalue[1] = op[1];
+                cvalue[2] = '\0';
+                mdate[DAY] = atoi(cvalue);
+                cvalue[0] = op[2];
+                cvalue[1] = op[3];
+                cvalue[2] = '\0';
+                mdate[MONTH] = atoi(cvalue);
+                cvalue[0] = op[4];
+                cvalue[1] = op[5];
+                cvalue[2] = op[6];
+                cvalue[3] = op[7];
+                cvalue[4] = '\0';
+                mdate[YEAR] = atoi(cvalue);
+				DelAVL(mdate);
+				printf("Date %s is deleted\n", op);
                 break;
         	case SHOW:
                 if (count != 1) break;
+				AVLPrint(root, 0);
                 break;
         	case QUIT:
                 if (count != 1) break;
+				printf("bye-bye\n");
 				exit(1);
     }
   }
